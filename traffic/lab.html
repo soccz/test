@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>심화 탐구: 교통류 이론과 최적화 시뮬레이션</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" as="style"
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    <!-- Analysis & Math Tools -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <span class="badge">Advanced Lab</span>
+            <h1>Simulation Lab</h1>
+            <p class="subtitle">교통류 이론(Traffic Flow Theory) 적용 및 최적화 실험</p>
+            <div style="margin-top: 30px;">
+                <a href="index.html" class="btn btn-secondary">← 기본 분석으로 돌아가기</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav>
+        <ul>
+            <li><a href="#theory">Theory</a></li>
+            <li><a href="#parameters">Parameters</a></li>
+            <li><a href="#simulation">Simulaton</a></li>
+            <li><a href="#equilibrium">Equilibrium</a></li>
+        </ul>
+    </nav>
+
+    <!-- 1. Theory -->
+    <section id="theory">
+        <div class="container">
+            <h2 class="section-title"><span>📚</span> 1. 이론적 배경 (Theory)</h2>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Greenshields' Model</h3>
+                    <p style="color: #424245;">
+                        단순한 2차함수 근사를 넘어, 교통공학의 기초가 되는 <strong>Greenshields 모형</strong>을 적용했습니다.
+                        속도(\(v\))와 밀도(\(k\))가 선형 관계를 가진다고 가정합니다.
+                    </p>
+                    <div class="equation-box">
+                        $$ v = u_f \left( 1 - \frac{k}{k_j} \right) $$
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>BPR 통행시간 함수</h3>
+                    <p style="color: #424245;">
+                        도로 용량 대비 교통량이 늘어날 때, 통행시간이 얼마나 증가하는지 계산하는 공식입니다.
+                        이를 시뮬레이터의 핵심 알고리즘으로 사용했습니다.
+                    </p>
+                    <div class="equation-box">
+                        $$ T = T_0 \left[ 1 + \alpha \left( \frac{Q}{C} \right)^\beta \right] $$
+                    </div>
+                    <p style="text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                        (\(T_0\): 자유통행시간, \(C\): 용량, \(\alpha=0.15\), \(\beta=4.0\))
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Parameters -->
+    <section id="parameters">
+        <div class="container">
+            <h2 class="section-title"><span>📊</span> 2. 데이터 기반 파라미터 도출</h2>
+
+            <div class="card">
+                <h3>실제 데이터 분석 결과</h3>
+                <p style="color: #424245; margin-bottom: 20px;">
+                    7일간 수집된 17,090개의 데이터를 Greenshields 모델에 적용하여,
+                    대상 네트워크(안현-도리-일직-조남)의 <strong>거시적 파라미터</strong>를 찾아냈습니다.
+                </p>
+
+                <div class="grid-2">
+                    <div>
+                        <div class="chart-container">
+                            <img src="traffic_speed_scatter.png" alt="Speed-Density">
+                        </div>
+                        <p class="caption">속도-밀도 관계 (선형 회귀)</p>
+                    </div>
+                    <div>
+                        <div style="background: #F5F5F7; border-radius: 16px; padding: 20px;">
+                            <div class="param-row">
+                                <span>자유 속도 (\(u_f\))</span>
+                                <span style="font-weight: bold; color: #34C759;">103.7 km/h</span>
+                            </div>
+                            <div class="param-row">
+                                <span>혼잡 밀도 (\(k_j\))</span>
+                                <span style="font-weight: bold; color: #FF3B30;">50.2 대/km</span>
+                            </div>
+                            <div class="param-row" style="border-bottom: none;">
+                                <span>도로 용량 (\(C\))</span>
+                                <span style="font-weight: bold; color: #0071E3;">1,301 대/시</span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info" style="margin-top: 20px;">
+                            💡 <strong>해석:</strong> 제한속도(100km/h)와 자유속도가 거의 일치하며,
+                            시간당 1,300대가 넘어가면 급격한 정체가 발생함을 알 수 있습니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Simulation -->
+    <section id="simulation">
+        <div class="container">
+            <h2 class="section-title"><span>🧪</span> 3. Route Simulation Lab</h2>
+
+            <div class="alert alert-warning" style="margin-bottom: 20px;">
+                <strong>실험 목표:</strong> 안현JC → 조남JC로 가는 차량 3,000대가 있을 때,
+                단거리(A)와 우회로(B)에 몇 대씩 나눠 보내야 <strong>모두가 가장 빨리</strong> 도착할까요?
+            </div>
+
+            <div class="card">
+                <h3>교통 배분 시뮬레이터 (Traffic Assignment)</h3>
+
+                <div class="sim-container"
+                    style="background: #F5F5F7; padding: 24px; border-radius: 16px; margin-top:20px; border: 1px solid rgba(0,0,0,0.05);">
+                    <div class="grid-2">
+                        <!-- 컨트롤 패널 -->
+                        <div>
+                            <div style="margin-bottom: 25px;">
+                                <label style="display:block; margin-bottom:10px; font-weight:bold; color: #1D1D1F;">총
+                                    교통량 (Demand): <span id="totalDemandVal" style="color: #0071E3;">3000</span>
+                                    대/시</label>
+                                <input type="range" id="totalDemand" min="1000" max="5000" value="3000" step="100">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display:block; margin-bottom:10px; font-weight:bold; color: #1D1D1F;">경로
+                                    분배 (Route Split)</label>
+                                <div
+                                    style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #86868B; margin-bottom: 8px;">
+                                    <span>Route A (단거리, 5km)</span>
+                                    <span>Route B (우회로, 8km)</span>
+                                </div>
+                                <input type="range" id="splitRatio" min="0" max="100" value="50">
+                                <div style="text-align: center; font-weight: bold; margin-top: 10px;">
+                                    A: <span id="ratioA" style="color:#FFA500;">50%</span>
+                                    vs
+                                    B: <span id="ratioB" style="color:#4ECDC4;">50%</span>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-danger" id="equilibriumMsg">
+                                ⚖️ 현재 상태: 균형 아님
+                            </div>
+                        </div>
+
+                        <!-- 결과 차트 -->
+                        <div>
+                            <canvas id="simChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 상세 결과값 -->
+                    <div class="grid-2" style="margin-top: 20px; border-top: 1px solid #D2D2D7; padding-top: 20px;">
+                        <div style="text-align: center;">
+                            <h4 style="color:#FFA500; margin-bottom: 8px;">Route A 결과</h4>
+                            <p style="font-size: 0.9rem; color: #86868B;">교통량: <span id="volA"
+                                    style="font-weight:bold; color: #1D1D1F;">1500</span> 대</p>
+                            <p style="font-size: 1.5rem; font-weight: bold; margin-top: 5px; color: #1D1D1F;">⏱️ <span
+                                    id="timeA">15.2</span> 분</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <h4 style="color:#4ECDC4; margin-bottom: 8px;">Route B 결과</h4>
+                            <p style="font-size: 0.9rem; color: #86868B;">교통량: <span id="volB"
+                                    style="font-weight:bold; color: #1D1D1F;">1500</span> 대</p>
+                            <p style="font-size: 1.5rem; font-weight: bold; margin-top: 5px; color: #1D1D1F;">⏱️ <span
+                                    id="timeB">18.5</span> 분</p>
+                        </div>
+                    </div>
+
+                    <!-- 총 시스템 통행시간 -->
+                    <div
+                        style="margin-top: 20px; border-top: 1px solid #D2D2D7; padding-top: 15px; text-align: center;">
+                        <p style="font-size: 0.9rem; color: #86868B; margin-bottom: 5px;">📊 총 시스템 통행시간 (Total System
+                            Travel Time)</p>
+                        <p style="font-size: 1.8rem; font-weight: bold; color: #0071E3;"><span
+                                id="totalSystemTime">0</span> <span style="font-size: 1rem; color: #86868B;">차량·분</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Conclusion -->
+    <section id="equilibrium">
+        <div class="container">
+            <h2 class="section-title"><span>⚖️</span> 4. 결론: 사용자 균형</h2>
+
+            <div class="card">
+                <h3>User Equilibrium (UE)의 의미</h3>
+                <p style="color: #424245;">
+                    시뮬레이션에서 두 경로의 시간이 같아지는 지점(\(T_A = T_B\))을 찾으셨나요?
+                    이것이 바로 <strong>User Equilibrium</strong>입니다.
+                </p>
+                <div class="alert alert-success" style="margin-top: 20px;">
+                    <strong>✨ Insight</strong><br>
+                    개인이 각자 '나한테 가장 빠른 길'을 선택하면 균형점에 도달합니다.<br>
+                    하지만 이것이 전체 시스템에서 가장 효율적인 상태(System Optimal)는 아닐 수 있습니다.
+                    이것이 바로 <strong>Braess의 역설</strong>로 이어지는 교통공학의 핵심 주제입니다.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p class="source">
+                Advanced Project Lab<br>
+                Based on Real VDS Data & Traffic Flow Theory
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/simulation.js"></script>
+</body>
+
+</html>
