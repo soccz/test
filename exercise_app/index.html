@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>운동 기록</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app">
+        <!-- 헤더 -->
+        <header class="header">
+            <h1>🏋️ 운동 기록</h1>
+            <div class="date-picker">
+                <button class="date-nav" id="prevDate">◀</button>
+                <input type="date" id="dateInput" class="date-input">
+                <button class="date-nav" id="nextDate">▶</button>
+            </div>
+            <p class="date-display" id="todayDate"></p>
+        </header>
+
+        <!-- 회복 배너 -->
+        <div class="recovery-banner" id="recoveryBanner" style="display: none;">
+            <span class="recovery-icon">⚠️</span>
+            <span class="recovery-text" id="recoveryText"></span>
+        </div>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+            <!-- 진행률 -->
+            <div class="progress-card">
+                <div class="progress-info">
+                    <span>오늘의 루틴</span>
+                    <span id="progressText">0/0 완료</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <!-- 2컬럼 그리드 -->
+            <div class="two-column">
+                <!-- 왼쪽: 운동 리스트 -->
+                <div class="column-left">
+                    <h2 class="section-title">📋 오늘 할 운동</h2>
+                    <div class="exercise-list" id="todayExerciseList"></div>
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <span class="empty-icon">🎉</span>
+                        <p>오늘은 휴식일!</p>
+                        <small>관리 메뉴에서 루틴을 설정하세요</small>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn-manage" id="btnManage">⚙️ 루틴 관리</button>
+                        <button class="btn-report" id="btnReport">📊 월간 보고서</button>
+                    </div>
+                </div>
+
+                <!-- 오른쪽: 통계 & 추천 -->
+                <div class="column-right">
+                    <!-- 추천 카드 -->
+                    <div class="recommend-card" id="recommendSection">
+                        <h3>💡 AI 추천</h3>
+                        <div id="recommendList"></div>
+                    </div>
+
+                    <!-- 차트 -->
+                    <div class="chart-card">
+                        <h3>📊 이번 주 수행률</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 기록 모달 -->
+        <div class="modal" id="recordModal">
+            <div class="modal-content">
+                <h3 id="modalTitle">운동 기록</h3>
+                <div class="modal-info" id="modalExerciseInfo"></div>
+                <div class="form-group">
+                    <label>완료 여부</label>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" id="btnDone">완료 ✓</button>
+                        <button class="toggle-btn" id="btnNotDone">미완료</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>운동 강도 (RPE)</label>
+                    <input type="range" id="rpeSlider" min="1" max="10" value="5">
+                    <span class="rpe-value" id="rpeValue">5</span>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn btn-cancel" id="btnCancel">취소</button>
+                    <button class="btn btn-save" id="btnSave">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 관리 모달 -->
+        <div class="modal" id="manageModal">
+            <div class="modal-content modal-wide">
+                <h3>⚙️ 루틴 관리</h3>
+                <p class="modal-desc">운동별로 요일을 설정하세요</p>
+                <div class="manage-list" id="manageList"></div>
+                <button class="btn-add" id="btnAddExercise">+ 새 운동 추가</button>
+                <div class="modal-buttons">
+                    <button class="btn btn-save" id="btnManageClose">저장 후 닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 월간 보고서 모달 (Dashboard Style) -->
+        <div class="modal" id="reportModal">
+            <div class="modal-content modal-dashboard">
+                <div class="dashboard-header">
+                    <h3>📊 월간 운동 리포트</h3>
+                    <div class="report-month-nav">
+                        <button class="date-nav" id="prevMonth">◀</button>
+                        <span id="reportMonthLabel">2024년 12월</span>
+                        <button class="date-nav" id="nextMonth">▶</button>
+                    </div>
+                    <button class="btn-close-icon" id="btnReportCloseIcon">×</button>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- 1. 요약 카드 (상단) -->
+                    <div class="dashboard-section summary-section" id="reportSummary">
+                        <!-- JS가 채움 -->
+                    </div>
+
+                    <!-- 2. 히트맵 (좌측 중단) -->
+                    <div class="dashboard-section heatmap-section">
+                        <h4>📅 요일별 운동 패턴 (Heatmap)</h4>
+                        <div class="heatmap-container" id="heatmapContainer"></div>
+                    </div>
+
+                    <!-- 3. 추세 차트 (우측 중단) -->
+                    <div class="dashboard-section trend-section">
+                        <h4>📈 강도 & 수행률 변화</h4>
+                        <div class="chart-wrapper-small">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 4. 볼륨/빈도 차트 (좌측 하단) -->
+                    <div class="dashboard-section volume-section">
+                        <h4>🏆 운동별 누적 볼륨</h4>
+                        <div class="chart-wrapper-small">
+                            <canvas id="volumeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 5. 인사이트/최적화 (우측 하단) -->
+                    <div class="dashboard-section insight-section">
+                        <h4>💡 AI 스케줄 최적화</h4>
+                        <div id="optimizationList" class="optimization-list">
+                            <!-- JS가 채움 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button class="btn btn-save" id="btnReportClose">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 새 운동 추가 모달 -->
+        <div class="modal" id="addModal">
+            <div class="modal-content">
+                <h3>새 운동 추가</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>운동 이름</label>
+                        <input type="text" id="newExName" class="input" placeholder="예: 버피">
+                    </div>
+                    <div class="form-group form-small">
+                        <label>목표량</label>
+                        <input type="number" id="newExReps" class="input" value="15">
+                    </div>
+                    <div class="form-group form-small">
+                        <label>단위</label>
+                        <select id="newExUnit" class="input">
+                            <option value="회">회</option>
+                            <option value="초">초</option>
+                            <option value="분">분</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>부위</label>
+                        <select id="newExType" class="input">
+                            <option value="upper">상체</option>
+                            <option value="lower">하체</option>
+                            <option value="core">코어</option>
+                            <option value="cardio">유산소</option>
+                            <option value="mobility">유연성</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>강도</label>
+                        <input type="range" id="newExIntensity" min="1" max="3" value="2">
+                        <span class="intensity-label" id="newExIntensityValue">2</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>요일 선택</label>
+                    <div class="day-buttons" id="newDaySelector">
+                        <label class="day-btn"><input type="checkbox" value="Mon"><span>월</span></label>
+                        <label class="day-btn"><input type="checkbox" value="Tue"><span>화</span></label>
+                        <label class="day-btn"><input type="checkbox" value="Wed"><span>수</span></label>
+                        <label class="day-btn"><input type="checkbox" value="Thu"><span>목</span></label>
+                        <label class="day-btn"><input type="checkbox" value="Fri"><span>금</span></label>
+                        <label class="day-btn"><input type="checkbox" value="Sat"><span>토</span></label>
+                        <label class="day-btn"><input type="checkbox" value="Sun"><span>일</span></label>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn btn-cancel" id="btnAddCancel">취소</button>
+                    <button class="btn btn-save" id="btnAddSave">추가</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
